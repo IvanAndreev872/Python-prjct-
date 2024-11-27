@@ -1,10 +1,7 @@
 import re
 
 import models
-import json
-
-from database.models import SessionLocal
-
+import datetime
 
 def check_new_user(telegram_id: int) -> bool:
     """
@@ -85,44 +82,128 @@ def get_services_by_master(master: models.Master):
 def get_masters_by_service(service1: models.Service):
     return list(service1.masters)
 
-def add_new_schedule_to_master(master: models.Master, work_date, start_time, end_time):
+def add_new_schedule_to_master(master: models.Master, start_time, end_time):
     """
+    Время начала и конца должно быть кратно 30 минутам!
     Добавляет новый промежуток рабочего времени для мастера, если этот промежуток пересекается с уже существующим,
-    то ничего не происходит.
+    то в базе будет храниться их объединение
     """
+    lst = []
+    begin = start_time
+    end = start_time + datetime.timedelta(minutes=30)
+    while end <= end_time:
+        schedule_tmp = models.Schedule(master_id=master.master_id, start_time=begin, end_time=end)
+        lst.append(schedule_tmp)
+        begin += datetime.timedelta(minutes=30)
+        end += datetime.timedelta(minutes=30)
+
     with models.SessionLocal() as session:
-        sch = session.query(models.Schedule).filter(models.Schedule.work_date == work_date).first()
-        if not sch is None:
-            if sch.start_time < start_time < sch.end_time:
-                return
-            if start_time < sch.start_time < end_time:
-                return
-        schedule = models.Schedule(master_id=master.master_id, work_date=work_date, start_time=start_time, end_time=end_time)
-        session.add(schedule)
+        masters_schedule = master.schedule
+        for sch in lst:
+            flag = True
+            for sch2 in masters_schedule:
+                if sch2.start_time == sch.start_time:
+                    flag = False
+                    break
+            if flag:
+                session.add(sch)
+
         session.commit()
 
 def get_schedules_by_master(master: models.Master):
+    """
+    В БД хранятся равные промежутки по 30 минут (у каждого время начала кратно 30 минутам)
+    """
     return master.schedule
 
 def get_master_by_schedule(schedule: models.Schedule):
     return schedule.master
 
-def get_schedules_by_service_and_master():
+def get_schedules_by_service_and_master(master: models.Master, service: models.Service)->list[models.Schedule]:
     """
-    доступные промежутки по данной услуге и мастеру
-    :return:
+    Выдает допустимые промежутки для записи по данной услуге и мастеру.
     """
-    pass
+    res = []
+    free_schedules = []
+    for schedule in get_schedules_by_master(master):
+        flag = True
+        for appoint in master.appointments:
+            if (appoint.status in ['pending', 'confirmed']) and (appoint.start_time <= schedule.start_time < appoint.end_time or schedule.start_time < datetime.datetime.now()):
+                flag = False
+        if flag:
+            free_schedules.append(schedule)
 
-def get_schedules_by_service():
-    """
-    доступные промежутки по данной услуге
-    """
-    pass
+    free_schedules.sort(key=lambda x: x.start_time)
+    begin_i = 0
+    while begin_i < len(free_schedules):
+        cur_i = begin_i + 1
+        cur_time = 30
+        while cur_i < len(free_schedules) and free_schedules[cur_i].start_time == free_schedules[cur_i - 1].end_time:
+            cur_i += 1
+            cur_time += 30
+        if cur_time >= service.duration_minutes:
+            res.append(free_schedules[begin_i])
 
-def add_new_appointment(master_id: int, user_id: int, service_id, start_time):
+        begin_i += 1
+    return res
+
+def get_schedules_by_service(service: models.Service) -> dict[models.Master, list[models.Schedule]]:
     """
-    Новую запись
+    Возвращает словарь Мастер - список промежутков времени, на которые возможна запись
     """
-    pass
+    res = {}
+    with models.SessionLocal() as session:
+        for master in session.query(models.Master):
+            res[master] = get_schedules_by_service_and_master(master, service)
+    return res
+
+def add_new_appointment(master: models.Master, user: models.User, service: models.Service, schedule: models.Schedule):
+    """
+    Делает новую запись, на дотупное время. Этот schedule должен быть получен при помощи 1 из 2х функций сверху.
+    """
+    with models.SessionLocal() as session:
+        app = models.Appointment(user_id = user.user_id, master_id=master.master_id, service_id=service.service_id,
+                                 start_time=schedule.start_time, end_time=schedule.start_time + datetime.timedelta(minutes=service.duration_minutes))
+        session.add(app)
+        session.commit()
+
+def cancel_appointment(appointment: models.Appointment):
+    with models.SessionLocal() as session:
+        appointment.status = 'cancelled'
+        session.commit()
+
+def confirm_appointment(appointment: models.Appointment):
+    with models.SessionLocal() as session:
+        appointment.status = 'confirmed'
+        session.commit()
+
+def make_notification(appointment: models.Appointment, type: str, send_at: int):
+    """
+    type: "reminder" or "confirmation"
+    send_at - за сколько часов до записи.
+    """
+    with models.SessionLocal() as session:
+        notif = models.Notification(appointment_id = appointment.appointment_id, notification_type = type,
+                                    send_at = appointment.start_time - datetime.timedelta(hours=send_at))
+        session.add(notif)
+        session.commit()
+
+def delete_master(master: models.Master):
+    """
+    Все эти функции удаления должны каскадом удалять все связанные записи.
+    """
+    with models.SessionLocal() as session:
+        session.delete(master)
+        session.commit()
+
+def delete_user(user: models.User):
+    with models.SessionLocal() as session:
+        session.delete(user)
+        session.commit()
+
+def delete_service(service: models.Service):
+    with models.SessionLocal() as session:
+        session.delete(service)
+        session.commit()
+
 
