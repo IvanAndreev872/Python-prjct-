@@ -1,6 +1,6 @@
 import re
 
-import models
+from database import models
 import datetime
 
 def check_new_user(telegram_id: int) -> bool:
