@@ -6,6 +6,8 @@ from aiogram import types
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 import database.db_utils as db_utils
 import app.keyboards.registered_users_kb as registered_users_kb
+import app.keyboards.registration_kb as registration_kb
+import app.keyboards.welcome_keyboard as welcome_keyboard
 
 router = Router()
 
@@ -14,13 +16,25 @@ class Registration(StatesGroup):
     writing_email = State()
     sending_contact = State()
 
+
+@router.message(F.text.lower().strip() == 'отмена')
+async def cancel_handler(message: Message, state: FSMContext):
+    """
+    Отменяет регистрацию
+    """
+    cur_state = await state.get_state()
+    if cur_state is None:
+        return
+    await state.clear()
+    await message.answer(text='Регистрация прекращена.', reply_markup=welcome_keyboard.get_welcome_kb(message.from_user.id))
+
 @router.message(F.text.lower() == 'регистрация')
 async def start_registration_handler(message: Message, state: FSMContext):
     if not db_utils.check_new_user(message.from_user.id):
         await message.answer(text="Вы уже зарегистрированы")
     else:
         await message.answer(text="Введите имя:",
-                                      reply_markup=ReplyKeyboardRemove())
+                                      reply_markup=registration_kb.get_registration_kb())
         await state.set_state(Registration.writing_name)
 
 @router.message(Registration.writing_name)
