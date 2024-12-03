@@ -1,4 +1,5 @@
 import re
+import typing
 
 from database import models
 import datetime
@@ -29,6 +30,16 @@ def add_new_user(telegram_id: int, name: str, phone: str, email: str, role='clie
         session.commit()
         return user
 
+def get_user_by_telegram_id(telegram_id: int) -> models.User:
+    with models.SessionLocal() as session:
+        user = session.query(models.User).filter(models.User.telegram_id == telegram_id).first()
+        return user
+
+def get_user_by_master(master: models.Master):
+    with models.SessionLocal() as session:
+        master = session.merge(master)
+        return master.user
+
 def add_new_service(name: str, description: str, price: int, duration_minutes: int):
     """
     Добавляет новую услугу в базу данных услуг, если такой еще нет.
@@ -39,6 +50,10 @@ def add_new_service(name: str, description: str, price: int, duration_minutes: i
                                      duration_minutes=duration_minutes)
             session.add(service)
             session.commit()
+
+def get_service_by_name(name: str) -> models.Service:
+    with models.SessionLocal() as session:
+        return session.query(models.Service).filter(models.Service.name == name).first()
 
 def add_service_to_master(master: models.Master, service: str):
     """
@@ -73,14 +88,30 @@ def add_new_master(telegram_id: int, experience_years: int, services: list[str])
         session.add(master)
         session.commit()
 
+def get_master_by_telegram_id(telegram_id: int) -> models.Master:
+    with models.SessionLocal() as session:
+        user = session.query(models.User).filter(models.User.telegram_id == telegram_id).first()
+        if user:
+            return user.master[0]
+        return None
+
+def get_service_by_appointment(appointment: models.Appointment) -> models.Service:
+    with models.SessionLocal() as session:
+        appointment = session.merge(appointment)
+        return appointment.service
+
 def get_services_by_master(master: models.Master):
     """
     Получить услуги, которые предоставляет мастер
     """
-    return list(master.specializations)
+    with models.SessionLocal() as session:
+        master = session.merge(master)
+        return list(master.specializations)
 
 def get_masters_by_service(service1: models.Service):
-    return list(service1.masters)
+    with models.SessionLocal() as session:
+        service1 = session.merge(service1)
+        return list(service1.masters)
 
 def add_new_schedule_to_master(master: models.Master, start_time, end_time):
     """
@@ -98,6 +129,7 @@ def add_new_schedule_to_master(master: models.Master, start_time, end_time):
         end += datetime.timedelta(minutes=30)
 
     with models.SessionLocal() as session:
+        master = session.merge(master)
         masters_schedule = master.schedule
         for sch in lst:
             flag = True
@@ -114,38 +146,45 @@ def get_schedules_by_master(master: models.Master):
     """
     В БД хранятся равные промежутки по 30 минут (у каждого время начала кратно 30 минутам)
     """
-    return master.schedule
+    with models.SessionLocal() as session:
+        master = session.merge(master)
+        return master.schedule
 
 def get_master_by_schedule(schedule: models.Schedule):
-    return schedule.master
+    with models.SessionLocal() as session:
+        schedule = session.merge(schedule)
+        return schedule.master
 
 def get_schedules_by_service_and_master(master: models.Master, service: models.Service)->list[models.Schedule]:
     """
     Выдает допустимые промежутки для записи по данной услуге и мастеру.
     """
-    res = []
-    free_schedules = []
-    for schedule in get_schedules_by_master(master):
-        flag = True
-        for appoint in master.appointments:
-            if (appoint.status in ['pending', 'confirmed']) and (appoint.start_time <= schedule.start_time < appoint.end_time or schedule.start_time < datetime.datetime.now()):
-                flag = False
-        if flag:
-            free_schedules.append(schedule)
+    with models.SessionLocal() as session:
+        master = session.merge(master)
+        service = session.merge(service)
+        res = []
+        free_schedules = []
+        for schedule in get_schedules_by_master(master):
+            flag = True
+            for appoint in master.appointments:
+                if (appoint.status in ['pending', 'confirmed']) and (appoint.start_time <= schedule.start_time < appoint.end_time or schedule.start_time < datetime.datetime.now()):
+                    flag = False
+            if flag:
+                free_schedules.append(schedule)
 
-    free_schedules.sort(key=lambda x: x.start_time)
-    begin_i = 0
-    while begin_i < len(free_schedules):
-        cur_i = begin_i + 1
-        cur_time = 30
-        while cur_i < len(free_schedules) and free_schedules[cur_i].start_time == free_schedules[cur_i - 1].end_time:
-            cur_i += 1
-            cur_time += 30
-        if cur_time >= service.duration_minutes:
-            res.append(free_schedules[begin_i])
+        free_schedules.sort(key=lambda x: x.start_time)
+        begin_i = 0
+        while begin_i < len(free_schedules):
+            cur_i = begin_i + 1
+            cur_time = 30
+            while cur_i < len(free_schedules) and free_schedules[cur_i].start_time == free_schedules[cur_i - 1].end_time:
+                cur_i += 1
+                cur_time += 30
+            if cur_time >= service.duration_minutes:
+                res.append(free_schedules[begin_i])
 
-        begin_i += 1
-    return res
+            begin_i += 1
+        return res
 
 def get_schedules_by_service(service: models.Service) -> dict[models.Master, list[models.Schedule]]:
     """
@@ -167,6 +206,16 @@ def add_new_appointment(master: models.Master, user: models.User, service: model
         session.add(app)
         session.commit()
 
+def get_appointments_by_user(user: models.User) -> typing.List[models.Appointment]:
+    with models.SessionLocal() as session:
+        user = session.merge(user)
+        return user.appointments
+
+def get_appointments_by_master(master: models.Master) -> typing.List[models.Appointment]:
+    with models.SessionLocal() as session:
+        master = session.merge(master)
+        return master.appointments
+
 def cancel_appointment(appointment: models.Appointment):
     with models.SessionLocal() as session:
         appointment.status = 'cancelled'
@@ -176,6 +225,16 @@ def confirm_appointment(appointment: models.Appointment):
     with models.SessionLocal() as session:
         appointment.status = 'confirmed'
         session.commit()
+
+def get_appointment_by_id(appointment_id: int) -> models.Appointment:
+    with models.SessionLocal() as session:
+        appo = session.query(models.Appointment).filter_by(appointment_id=appointment_id).first()
+        return appo
+
+def get_master_by_appointment(appointment: models.Appointment) -> models.Master:
+    with models.SessionLocal() as session:
+        appointment = session.merge(appointment)
+        return appointment.master
 
 def make_notification(appointment: models.Appointment, type: str, send_at: int):
     """
@@ -205,5 +264,4 @@ def delete_service(service: models.Service):
     with models.SessionLocal() as session:
         session.delete(service)
         session.commit()
-
 

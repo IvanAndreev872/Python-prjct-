@@ -5,6 +5,9 @@ from database import db_utils
 
 
 def get_welcome_kb(user_id) -> ReplyKeyboardMarkup:
+    """
+    Начальная клавиатура, кнопка регистрации появляется только у тех, кто еще не зареган
+    """
     builder = ReplyKeyboardBuilder()
     if db_utils.check_new_user(user_id):
         builder.add(types.KeyboardButton(text='Регистрация'))

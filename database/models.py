@@ -24,8 +24,8 @@ class User(Base):
     role = sa.orm.mapped_column(sa.Enum("client", "master", "admin", name="role"),
                                 default = 'client', nullable=False)
     created_at = sa.orm.mapped_column(sa.TIMESTAMP, default = sa.func.now(), nullable=False)
-    masters = sa.orm.relationship("Master", back_populates="user", cascade="all, delete")
-    appointments = sa.orm.relationship("Appointment", back_populates="user", cascade="all, delete")
+    master = sa.orm.relationship("Master", back_populates="user", cascade="all, delete")
+    appointments : sa.orm.Mapped[typing.List["Appointment"]] = sa.orm.relationship(back_populates="user", cascade="all, delete")
 
 master_services = sa.Table(
     "master_services", Base.metadata,
@@ -38,7 +38,7 @@ class Master(Base):
     __tablename__ = "masters"
     master_id = sa.orm.mapped_column(sa.INTEGER, primary_key=True)
     user_id = sa.orm.mapped_column(sa.INTEGER, sa.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, unique=True)
-    user = sa.orm.relationship("User", back_populates="masters")
+    user = sa.orm.relationship("User", back_populates="master")
     specializations = relationship("Service", secondary=master_services, back_populates="masters")
     experience_years = sa.orm.mapped_column(sa.Integer, nullable=False, default=0)
     schedule: sa.orm.Mapped[typing.List["Schedule"]] = sa.orm.relationship(back_populates="master", cascade="all, delete")
@@ -53,6 +53,7 @@ class Service(Base):
     price = sa.orm.mapped_column(sa.Integer, nullable=False)
     duration_minutes = sa.orm.mapped_column(sa.Integer, nullable=False)
     masters = sa.orm.relationship("Master", secondary=master_services, back_populates="specializations")
+    appointments: sa.orm.Mapped[typing.List["Appointment"]] = sa.orm.relationship(back_populates="service", cascade="all, delete")
     __table_args__ = (CheckConstraint(duration_minutes >= 0), CheckConstraint(price >= 0))
 
 #фактически таблица рабочих промежутков
@@ -72,7 +73,7 @@ class Appointment(Base):
     service_id = sa.orm.mapped_column(sa.INTEGER, sa.ForeignKey("services.service_id"))
     master = sa.orm.relationship("Master", back_populates="appointments")
     user = sa.orm.relationship("User", back_populates="appointments")
-    # !service = sa.orm.relationship("Service", back_populates="appointments")
+    service = sa.orm.relationship("Service", back_populates="appointments")
     start_time = sa.orm.mapped_column(sa.TIMESTAMP, nullable=False)
     end_time = sa.orm.mapped_column(sa.TIMESTAMP, nullable=False)
     status = sa.orm.mapped_column(sa.Enum("confirmed", "cancelled", "pending", name="status"),
