@@ -84,7 +84,7 @@ class Notification(Base):
     notification_id = sa.orm.mapped_column(sa.INTEGER, primary_key=True)
     appointment_id = sa.orm.mapped_column(sa.INTEGER, sa.ForeignKey("appointments.appointment_id"))
     appointment = sa.orm.relationship("Appointment")
-    notification_type = sa.orm.mapped_column(sa.Enum("reminder_24h", "reminder_1h", "confirmation", name="notification_type"),)
+    notification_type = sa.orm.mapped_column(sa.Enum("reminder", "confirmation", name="notification_type"),)
     send_at = sa.orm.mapped_column(sa.TIMESTAMP, nullable=False)
     status = sa.orm.mapped_column(sa.Enum("sent", "pending", name="status"), default="pending")
 
@@ -97,5 +97,3 @@ class Statistic(Base):
     revenue = sa.orm.mapped_column(sa.DECIMAL, nullable=False)
     most_popular_service = sa.orm.mapped_column(sa.String, nullable=False)
     busiest_master = sa.orm.mapped_column(sa.String, nullable=False)
-
-Base.metadata.create_all(engine)
