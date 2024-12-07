@@ -259,26 +259,4 @@ def delete_notification(notification: models.Notification, session = None):
     session.delete(notification)
     session.commit()
 
-'''
-add_new_service('cut', 'fd', 12000, 60)
-add_new_service('nails', 'blabla', 7000, 90)
-add_new_service('massage', 'bla lbv', 5000, 30)
-add_new_service("sauna", 'blall', 6000, 90)
-add_new_user(2345431, name='mst1', phone='79321435123', email='mail')
-add_new_user(950190265, name='andrey', phone='79227845408', email='mail')
-add_new_master(2345431, 3, ['cut', 'nails'])
-add_new_master(1234432, 12, ['sauna', 'massage'])
-master1 = get_master_by_telegram_id(2345431)
-master2 = get_master_by_telegram_id(1234432)
-add_new_user(12345, name='usr1', phone='79321435123', email='mail')
-usr = get_user_by_telegram_id(950190265)
-add_new_schedule_to_master(master1, datetime.datetime(year=2024, month=12, day = 3, hour=10), datetime.datetime(year=2024, month=12, day = 3, hour=15, minute=30))
-add_new_schedule_to_master(master2, datetime.datetime(year=2024, month=12, day = 3, hour=12), datetime.datetime(year=2024, month=12, day = 3, hour=15))
-srvc1 = get_service_by_name('sauna')
-srvc2 = get_service_by_name('massage')
-time = get_schedules_by_service_and_master(master2, srvc2)[0]
-add_new_appointment(master2, usr, srvc1, time)
-add_new_appointment(master2, usr, srvc1, time)
-print(get_appointments_by_user(usr))
-print(get_appointments_by_master(master1))
-'''
+
