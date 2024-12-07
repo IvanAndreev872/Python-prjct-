@@ -284,7 +284,7 @@ def test_get_master_by_appointment(session, db_appointments):
 
 def test_make_notification(session, db_appointments):
     appo = session.query(models.Appointment).first()
-    db_utils.make_notification(appo, type_='reminder', send_at=2, session=session)
+    db_utils.make_notification(appo, type_='reminder', send_at=2, chat_id =444, session=session)
     notif = session.query(models.Notification).first()
     assert notif is not None
     assert notif.notification_type == 'reminder'
@@ -293,8 +293,8 @@ def test_make_notification(session, db_appointments):
 @pytest.fixture
 def db_notifications(session, db_appointments):
     appo = session.query(models.Appointment).all()
-    db_utils.make_notification(appo[0], type_='reminder', send_at=2, session=session)
-    db_utils.make_notification(appo[1], type_='confirmation', send_at=3, session=session)
+    db_utils.make_notification(appo[0], type_='reminder', send_at=2, chat_id=123, session=session)
+    db_utils.make_notification(appo[1], type_='confirmation', send_at=3, chat_id=345, session=session)
 
 def test_delete_master(session, db_appointments):
     master = db_utils.get_master_by_telegram_id(telegram_id=1234, session=session)
@@ -327,3 +327,9 @@ def test_delete_service(session, db_appointments):
     assert service2 is None
     appointments = session.query(models.Appointment).filter(models.Appointment.service_id == service.service_id).first()
     assert appointments is None
+
+def test_delete_notification(session, db_notifications):
+    notification = session.query(models.Notification).first()
+    db_utils.delete_notification(notification, session=session)
+    notification2 = session.query(models.Notification).filter(models.Notification.notification_id == notification.notification_id).first()
+    assert notification2 is None

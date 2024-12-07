@@ -83,6 +83,7 @@ class Notification(Base):
     __tablename__ = "notifications"
     notification_id = sa.orm.mapped_column(sa.INTEGER, primary_key=True)
     appointment_id = sa.orm.mapped_column(sa.INTEGER, sa.ForeignKey("appointments.appointment_id"))
+    chat_id = sa.orm.mapped_column(sa.INTEGER, nullable=False)
     appointment = sa.orm.relationship("Appointment")
     notification_type = sa.orm.mapped_column(sa.Enum("reminder", "confirmation", name="notification_type"),)
     send_at = sa.orm.mapped_column(sa.TIMESTAMP, nullable=False)

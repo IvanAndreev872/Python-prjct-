@@ -224,14 +224,15 @@ def get_appointment_by_id(appointment_id: int, session = None) -> models.Appoint
 def get_master_by_appointment(appointment: models.Appointment, session = None) -> models.Master:
     return appointment.master
 
-def make_notification(appointment: models.Appointment, type_: str, send_at: int = 3, session=None):
+def make_notification(appointment: models.Appointment, type_: str, send_at: int = 3, chat_id: int = None, session=None):
     """
     type_: "reminder" or "confirmation"
     send_at - за сколько часов до записи.
     """
     session = session or get_session()
     notif = models.Notification(appointment_id = appointment.appointment_id, notification_type = type_,
-                                send_at = appointment.start_time - datetime.timedelta(hours=send_at))
+                                send_at = appointment.start_time - datetime.timedelta(hours=send_at),
+                                chat_id=chat_id)
     session.add(notif)
     session.commit()
 
@@ -251,6 +252,11 @@ def delete_user(user: models.User, session = None):
 def delete_service(service: models.Service, session = None):
     session = session or get_session()
     session.delete(service)
+    session.commit()
+
+def delete_notification(notification: models.Notification, session = None):
+    session = session or get_session()
+    session.delete(notification)
     session.commit()
 
 '''
