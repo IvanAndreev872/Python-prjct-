@@ -103,6 +103,10 @@ def get_master_by_telegram_id(telegram_id: int, session = None) -> models.Master
     except Exception:
         return None
 
+def get_all_masters(session = None) -> typing.List[models.Master]:
+    session = session or get_session()
+    return session.query(models.Master).all()
+
 def get_service_by_appointment(appointment: models.Appointment, session = None) -> models.Service:
     return appointment.service
 
@@ -258,5 +262,4 @@ def delete_notification(notification: models.Notification, session = None):
     session = session or get_session()
     session.delete(notification)
     session.commit()
-
 
