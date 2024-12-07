@@ -5,9 +5,9 @@ from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram import types
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 import database.db_utils as db_utils
-import app.keyboards.registered_users_kb as registered_users_kb
-import app.keyboards.registration_kb as registration_kb
-import app.keyboards.welcome_keyboard as welcome_keyboard
+import bot.keyboards.registered_users_kb as registered_users_kb
+import bot.keyboards.registration_kb as registration_kb
+import bot.keyboards.welcome_keyboard as welcome_keyboard
 
 router = Router()
 
