@@ -10,7 +10,7 @@ from aiogram.enums import ParseMode
 
 from config import TOKEN
 
-from app.handlers import router
+from app.handlers.handlers import router
 
 dp = Dispatcher()
 
