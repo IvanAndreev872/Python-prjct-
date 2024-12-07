@@ -8,6 +8,7 @@ class SessionControlMiddleware(BaseMiddleware):
                        handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
                        event: TelegramObject,
                        data: Dict[str, Any]) -> Any:
+        await handler(event, data)
         if db_utils.current_session:
             try:
                 db_utils.current_session.commit()
@@ -16,3 +17,4 @@ class SessionControlMiddleware(BaseMiddleware):
                 raise e
             finally:
                 db_utils.current_session.close()
+                db_utils.current_session = None

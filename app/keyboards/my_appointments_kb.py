@@ -12,8 +12,9 @@ from database.db_utils import get_service_by_appointment
 def get_appointments_kb(appointments: typing.List[models.Appointment]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     for appointment in appointments:
-        title=f"{get_service_by_appointment(appointment).name} - {appointment.start_time.strftime('%Y:%M:%D')}"
-        builder.row(types.InlineKeyboardButton(text=title, callback_data=str(appointment.appointment_id)))
+        if appointment.status != 'cancelled':
+            title=f"{get_service_by_appointment(appointment).name} - {appointment.start_time.strftime('%Y:%M:%D')}"
+            builder.row(types.InlineKeyboardButton(text=title, callback_data=str(appointment.appointment_id)))
     #builder.row(types.InlineKeyboardButton(text="Главное меню", callback_data='main_menu'))
     return builder.as_markup(resize_keyboard=True)
 

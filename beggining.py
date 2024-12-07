@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import sys
-from datetime import datetime
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -27,7 +26,7 @@ async def main() -> None:
     dp.include_router(app.handlers.welcome_handler.router)
     dp.include_router(app.handlers.registration.router)
     dp.include_router(app.handlers.my_appointments.router)
-    dp.update.outer_middleware(app.middlewares.session_control.SessionControlMiddleware())
+    dp.update.middleware(app.middlewares.session_control.SessionControlMiddleware())
     bot = Bot(token = config.bot_token.get_secret_value(), default = DefaultBotProperties(parse_mode = ParseMode.HTML))
 
     await bot.delete_webhook(drop_pending_updates=True)
