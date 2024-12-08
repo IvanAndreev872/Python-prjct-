@@ -30,13 +30,13 @@ async def cancel_handler(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(text='Запись прекращена.', reply_markup=registered_users_kb.get_registered_kb())
 
-@router.message(F.text.lower == 'записаться на процедуру')
+@router.message(Make_appointment.choose_service, F.text.lower == 'записаться на процедуру')
 async def start_appointment(message: Message, state: FSMContext):
     await state.update_data(user=message.from_user.id)
     await message.answer('Выберете интересующую вас процедуру: ', reply_markup=make_appointment_kb.get_service())
     await state.set_state(Make_appointment.choose_service)
 
-@router.callback_query(Make_appointment.choose_service, F.data.startswith('service id: '))
+@router.callback_query(Make_appointment.choose_master, F.data.startswith('service id: '))
 async def choosing_service(callback: CallbackQuery, state: FSMContext):
     service_id = int(callback.data.split(' ')[-1])
     serv = db_utils.get_service_by_id(service_id)
@@ -45,7 +45,7 @@ async def choosing_service(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.set_state(Make_appointment.choose_master)
 
-@router.callback_query(Make_appointment.choose_master, F.data.startswith('master id: '))
+@router.callback_query(Make_appointment.choose_time, F.data.startswith('master id: '))
 async def choosing_master(callback: CallbackQuery, state: FSMContext):
     appointment_data = await state.get_data()
     service_id = appointment_data['service']
@@ -57,7 +57,7 @@ async def choosing_master(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await state.set_state(Make_appointment.choose_time)
 
-@router.callback_query(Make_appointment.choose_time, F.data.startswith('window: '))
+@router.callback_query(F.data.startswith('window: '))
 async def choosing_time(callback: CallbackQuery, state: FSMContext):
     time_id = int(callback.data.split(' ')[-1])
     time = db_utils.get_schedule_by_id(time_id)
