@@ -2,9 +2,12 @@ import typing
 import sqlalchemy as sa
 from sqlalchemy.orm import DeclarativeBase, sessionmaker, relationship
 from sqlalchemy import CheckConstraint
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+
+
 
 engine = sa.create_engine("sqlite+pysqlite:///my_db.db", echo=False)
-SessionLocal = sessionmaker(bind=engine)
+SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 class Base (DeclarativeBase):
     pass
@@ -44,6 +47,15 @@ class Master(Base):
     schedule: sa.orm.Mapped[typing.List["Schedule"]] = sa.orm.relationship(back_populates="master", cascade="all, delete")
     appointments: sa.orm.Mapped[typing.List["Appointment"]] = sa.orm.relationship(back_populates="master", cascade="all, delete")
     __table_args__ = (CheckConstraint(experience_years >= 0),)
+
+class MasterCode(Base):
+    __tablename__ = "master_codes"
+    code_id = sa.orm.mapped_column(sa.INTEGER, primary_key=True)
+    code = sa.orm.mapped_column(sa.String(50), nullable=False, unique=True)
+    description = sa.orm.mapped_column(sa.String, nullable=True)
+    user_id = sa.orm.mapped_column(sa.INTEGER, sa.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=True)
+    user = sa.orm.relationship("User", backref="master_code")
+    created_at = sa.orm.mapped_column(sa.TIMESTAMP, default=sa.func.now(), nullable=False)
 
 class Service(Base):
     __tablename__ = "services"
