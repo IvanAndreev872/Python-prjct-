@@ -15,6 +15,9 @@ router = Router()
 class MasterFSM(StatesGroup):
     awaiting_code = State()
 
+"""
+хэндлер начала работы, принимает на вход "/start"
+"""
 
 @router.message(CommandStart())
 async def command_start_handler(message: Message):

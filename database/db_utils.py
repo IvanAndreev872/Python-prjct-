@@ -162,6 +162,10 @@ def get_all_masters(session = None) -> typing.List[models.Master]:
     session = session or get_session()
     return session.query(models.Master).all()
 
+def get_all_services(session = None) -> typing.List[models.Service]:
+    session = session or get_session()
+    return session.query(models.Service).all()
+
 def get_service_by_appointment(appointment: models.Appointment, session = None) -> models.Service:
     return appointment.service
 
@@ -279,6 +283,21 @@ def get_appointment_by_id(appointment_id: int, session = None) -> models.Appoint
     session = session or get_session()
     appo = session.query(models.Appointment).filter_by(appointment_id=appointment_id).first()
     return appo
+
+def get_service_by_id(service_id: int, session = None) -> models.Service:
+    session = session or get_session()
+    serv = session.query(models.Service).filter_by(service_id=service_id).first()
+    return serv
+
+def get_master_by_master_id(master_id: int, session = None) -> models.Master:
+    session = session or get_session()
+    mast = session.query(models.Master).filter_by(master_id=master_id).first()
+    return mast
+
+def get_schedule_by_id(schedule_id: int, session = None) -> models.Schedule:
+    session = session or get_session()
+    sch = session.query(models.Schedule).filter_by(schedule_id=schedule_id).first()
+    return sch
 
 def get_master_by_appointment(appointment: models.Appointment, session = None) -> models.Master:
     return appointment.master

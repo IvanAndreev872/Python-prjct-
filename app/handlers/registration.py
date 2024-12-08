@@ -68,4 +68,3 @@ async def contact_handler(message: Message, state: FSMContext):
         builder = ReplyKeyboardBuilder()
         builder.add(types.KeyboardButton(text='Поделится контактом', request_contact=True))
         await message.answer(text='Вы прислали не свой контакт. Пришлите свой:', reply_markup=builder.as_markup(resize_keyboard=True))
-
