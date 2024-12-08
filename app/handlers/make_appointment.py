@@ -42,7 +42,8 @@ async def choosing_service(callback: CallbackQuery, state: FSMContext):
     service_id = int(callback.data.split(' ')[-1])
     serv = db_utils.get_service_by_id(service_id)
     await state.update_data(service=service_id)
-    await callback.message.edit_text('Выберете мастера предоставляющего данную услугу: ', reply_markup=make_appointment_kb.get_right_masterts(service1=serv))
+    kb = await make_appointment_kb.get_right_masterts(service1=serv)
+    await callback.message.edit_text('Выберете мастера предоставляющего данную услугу: ', reply_markup=kb)
     await callback.answer()
     await state.set_state(Make_appointment.choose_master)
 
@@ -51,10 +52,11 @@ async def choosing_master(callback: CallbackQuery, state: FSMContext):
     appointment_data = await state.get_data()
     service_id = appointment_data['service']
     serv = db_utils.get_service_by_id(service_id=service_id)
-    master_id = int(callback.data.split(' '[-1]))
+    master_id = int(callback.data.split(' ')[-1])
     mast = db_utils.get_master_by_master_id(master_id=master_id)
     await state.update_data(master=master_id)
-    await callback.message.edit_text('Теперь осталось выбрать удобное для вас время: ', reply_markup=make_appointment_kb.get_free_windows(master=mast, service=serv))
+    kb = await make_appointment_kb.get_free_windows(master=mast, service=serv)
+    await callback.message.edit_text('Теперь осталось выбрать удобное для вас время: ', reply_markup=kb)
     await callback.answer()
     await state.set_state(Make_appointment.choose_time)
 
@@ -71,3 +73,4 @@ async def choosing_time(callback: CallbackQuery, state: FSMContext):
     db_utils.add_new_appointment(master=master, user=user, service=service, schedule=schedule)
     await callback.message.edit_text('Запись прошла успешно!', reply_markup=registered_users_kb.get_registered_kb())
     await state.clear()
+    await callback.answer()
