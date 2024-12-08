@@ -2,6 +2,8 @@ import re
 
 from database import models
 import datetime
+from database.models import SessionLocal, User
+import sqlalchemy as sa
 
 def check_new_user(telegram_id: int) -> bool:
     """
@@ -28,6 +30,14 @@ def add_new_user(telegram_id: int, name: str, phone: str, email: str, role='clie
         session.add(user)
         session.commit()
         return user
+
+def get_user_by_telegram_id(user_id: int):
+    with SessionLocal() as session:
+        result = session.execute(
+            sa.select(User).where(User.telegram_id == user_id)
+        )
+        return result.scalar_one_or_none()
+
 
 def add_new_service(name: str, description: str, price: int, duration_minutes: int):
     """
@@ -72,6 +82,60 @@ def add_new_master(telegram_id: int, experience_years: int, services: list[str])
 
         session.add(master)
         session.commit()
+
+def add_master_code(code: str, description: str, user_id: int = None):
+    """
+    Добавляет новый код мастера в базу данных, если такого кода ещё нет.
+    """
+    with models.SessionLocal() as session:
+        existing_code = session.query(models.MasterCode).filter_by(code=code).first()
+        if existing_code:
+            print(f"Код '{code}' уже существует в базе данных.")
+            return
+
+        master_code = models.MasterCode(code=code, description=description, user_id=user_id)
+        session.add(master_code)
+        session.commit()
+        print(f"Код '{code}' успешно добавлен.")
+
+
+
+def assign_master_code_to_user(user_id: int, code: str):
+    """
+    Сопоставляет пользователя с кодом мастера.
+    """
+    with models.SessionLocal() as session:
+        user = session.query(models.User).filter_by(user_id=user_id).first()
+        if not user:
+            raise ValueError("Пользователь не найден.")
+
+        master_code = session.query(models.MasterCode).filter_by(code=code).first()
+        if not master_code:
+            raise ValueError("Код мастера не найден.")
+
+        if master_code.user_id:
+            raise ValueError("Этот код уже использован другим пользователем.")
+
+        # Сопоставляем код с пользователем
+        master_code.user_id = user.user_id
+        session.commit()
+
+
+def is_user_linked_to_code(user_id: int, code: str) -> bool:
+    """
+    Проверяет, связан ли пользователь с кодом мастера.
+    """
+    with models.SessionLocal() as session:
+        master_code = session.query(models.MasterCode).filter_by(code=code, user_id=user_id).first()
+        return master_code is not None
+
+def get_master_code_by_user_id(user_id: int) -> str | None:
+    """
+    Получает код мастера для конкретного пользователя.
+    """
+    with models.SessionLocal() as session:
+        master_code = session.query(models.MasterCode).filter_by(user_id=user_id).first()
+        return master_code.code if master_code else None
 
 def get_services_by_master(master: models.Master):
     """
@@ -205,5 +269,3 @@ def delete_service(service: models.Service):
     with models.SessionLocal() as session:
         session.delete(service)
         session.commit()
-
-
