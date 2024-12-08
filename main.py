@@ -3,8 +3,7 @@ import logging
 import sys
 from os import getenv
 
-from aiogram import Bot, Dispatcher, html, F, Router
-from aiogram.filters import CommandStart, Command
+from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
@@ -12,6 +11,10 @@ from aiogram.enums import ParseMode
 import app.handlers.welcome_handler
 from config_reader import config
 import app.handlers.registration
+import app.handlers.my_appointments
+import app.middlewares.session_control
+from database.models import Base, engine
+import app.handlers.make_appointment
 
 dp = Dispatcher()
 
@@ -21,8 +24,12 @@ dp = Dispatcher()
 """
 
 async def main() -> None:
+    Base.metadata.create_all(engine)
     dp.include_router(app.handlers.welcome_handler.router)
     dp.include_router(app.handlers.registration.router)
+    dp.include_router(app.handlers.make_appointment.router)
+    dp.include_router(app.handlers.my_appointments.router)
+    dp.update.middleware(app.middlewares.session_control.SessionControlMiddleware())
     bot = Bot(token = config.bot_token.get_secret_value(), default = DefaultBotProperties(parse_mode = ParseMode.HTML))
 
     await bot.delete_webhook(drop_pending_updates=True)
