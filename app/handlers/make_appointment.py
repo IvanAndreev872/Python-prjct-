@@ -1,3 +1,5 @@
+from datetime import datetime
+import datetime
 from aiogram import  F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
@@ -71,6 +73,6 @@ async def choosing_time(callback: CallbackQuery, state: FSMContext):
     service = db_utils.get_service_by_id(appointment_data['service'])
     schedule = db_utils.get_schedule_by_id(appointment_data['time'])
     db_utils.add_new_appointment(master=master, user=user, service=service, schedule=schedule)
-    await callback.message.edit_text('Запись прошла успешно!', reply_markup=registered_users_kb.get_registered_kb())
+    await callback.message.answer('Запись прошла успешно!', reply_markup=registered_users_kb.get_registered_kb())
     await state.clear()
     await callback.answer()
