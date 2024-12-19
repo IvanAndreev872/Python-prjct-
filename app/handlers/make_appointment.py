@@ -76,3 +76,29 @@ async def choosing_time(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer('Запись прошла успешно!', reply_markup=registered_users_kb.get_registered_kb())
     await state.clear()
     await callback.answer()
+
+@router.callback_query(F.data.startswith('swipe_services:'))
+async def swipe_services_page(callback: CallbackQuery, state: FSMContext):
+    remover = int(callback.data.split(":")[1])
+    kb = await make_appointment_kb.get_service(remover=remover)
+    await callback.message.edit_text('Выберете интересующую вас процедуру: ', reply_markup=kb)
+    await callback.answer()
+
+@router.callback_query(F.data.startswith('swipe_masters:'))
+async def swipe_services_page(callback: CallbackQuery, state: FSMContext):
+    appointment_data = await state.get_data()
+    service = db_utils.get_service_by_id(appointment_data['service'])
+    remover = int(callback.data.split(":")[1])
+    kb = await make_appointment_kb.get_right_masterts(service1=service, remover=remover)
+    await callback.message.edit_text('Выберете мастера предоставляющего данную услугу: ', reply_markup=kb)
+    await callback.answer()
+
+@router.callback_query(F.data.startswith('swipe_time:'))
+async def swipe_services_page(callback: CallbackQuery, state: FSMContext):
+    appointment_data = await state.get_data()
+    service = db_utils.get_service_by_id(appointment_data['service'])
+    master = db_utils.get_master_by_master_id(appointment_data['master'])
+    remover = int(callback.data.split(":")[1])
+    kb = await make_appointment_kb.get_free_windows(master=master, service=service, remover=remover)
+    await callback.message.edit_text('Выберете мастера предоставляющего данную услугу: ', reply_markup=kb)
+    await callback.answer()
