@@ -23,12 +23,14 @@ async def get_right_masterts(service1: models.Service) -> InlineKeyboardMarkup :
         markup.add(InlineKeyboardButton(master_name, callback_data=f'master id: {master.master_id}'))
     return markup.as_markup(resize_keyboard=True)
 
-async def get_service() -> InlineKeyboardMarkup :
+async def get_service(remover=0) -> InlineKeyboardMarkup :
     services = get_all_services()
     markup = InlineKeyboardBuilder()
-    for service in services :
-        markup.add(InlineKeyboardButton(service.name, callback_data=f'service id: {service.service_id}'))
+    for count, service in enumerate(services) :
+        if count < 10 :
+            markup.add(InlineKeyboardButton(service.name, callback_data=f'service id: {service.service_id}'))
     return markup.as_markup(resize_keyboard=True)
+
 
 async def get_free_windows(master: models.Master, service: models.Service) -> InlineKeyboardBuilder :
     schedule = get_schedules_by_service_and_master(master=master, service=service)
@@ -37,3 +39,5 @@ async def get_free_windows(master: models.Master, service: models.Service) -> In
         window = f'{time.start_time} - {time.end_time}'
         markup.add(InlineKeyboardButton(window, callback_data=f'window: {time.schedule_id}'))
     return markup.as_markup(resize_keyboard=True)
+
+
