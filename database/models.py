@@ -2,9 +2,12 @@ import typing
 import sqlalchemy as sa
 from sqlalchemy.orm import DeclarativeBase, sessionmaker, relationship
 from sqlalchemy import CheckConstraint
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+
+
 
 engine = sa.create_engine("sqlite+pysqlite:///my_db.db", echo=False)
-SessionLocal = sessionmaker(bind=engine)
+SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 class Base (DeclarativeBase):
     pass
@@ -24,8 +27,8 @@ class User(Base):
     role = sa.orm.mapped_column(sa.Enum("client", "master", "admin", name="role"),
                                 default = 'client', nullable=False)
     created_at = sa.orm.mapped_column(sa.TIMESTAMP, default = sa.func.now(), nullable=False)
-    masters = sa.orm.relationship("Master", back_populates="user", cascade="all, delete")
-    appointments = sa.orm.relationship("Appointment", back_populates="user", cascade="all, delete")
+    master = sa.orm.relationship("Master", back_populates="user", cascade="all, delete")
+    appointments : sa.orm.Mapped[typing.List["Appointment"]] = sa.orm.relationship(back_populates="user", cascade="all, delete")
 
 master_services = sa.Table(
     "master_services", Base.metadata,
@@ -38,12 +41,21 @@ class Master(Base):
     __tablename__ = "masters"
     master_id = sa.orm.mapped_column(sa.INTEGER, primary_key=True)
     user_id = sa.orm.mapped_column(sa.INTEGER, sa.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, unique=True)
-    user = sa.orm.relationship("User", back_populates="masters")
+    user = sa.orm.relationship("User", back_populates="master")
     specializations = relationship("Service", secondary=master_services, back_populates="masters")
     experience_years = sa.orm.mapped_column(sa.Integer, nullable=False, default=0)
     schedule: sa.orm.Mapped[typing.List["Schedule"]] = sa.orm.relationship(back_populates="master", cascade="all, delete")
     appointments: sa.orm.Mapped[typing.List["Appointment"]] = sa.orm.relationship(back_populates="master", cascade="all, delete")
     __table_args__ = (CheckConstraint(experience_years >= 0),)
+
+class MasterCode(Base):
+    __tablename__ = "master_codes"
+    code_id = sa.orm.mapped_column(sa.INTEGER, primary_key=True)
+    code = sa.orm.mapped_column(sa.String(50), nullable=False, unique=True)
+    description = sa.orm.mapped_column(sa.String, nullable=True)
+    user_id = sa.orm.mapped_column(sa.INTEGER, sa.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=True)
+    user = sa.orm.relationship("User", backref="master_code")
+    created_at = sa.orm.mapped_column(sa.TIMESTAMP, default=sa.func.now(), nullable=False)
 
 class Service(Base):
     __tablename__ = "services"
@@ -53,6 +65,7 @@ class Service(Base):
     price = sa.orm.mapped_column(sa.Integer, nullable=False)
     duration_minutes = sa.orm.mapped_column(sa.Integer, nullable=False)
     masters = sa.orm.relationship("Master", secondary=master_services, back_populates="specializations")
+    appointments: sa.orm.Mapped[typing.List["Appointment"]] = sa.orm.relationship(back_populates="service", cascade="all, delete")
     __table_args__ = (CheckConstraint(duration_minutes >= 0), CheckConstraint(price >= 0))
 
 #фактически таблица рабочих промежутков
@@ -72,7 +85,7 @@ class Appointment(Base):
     service_id = sa.orm.mapped_column(sa.INTEGER, sa.ForeignKey("services.service_id"))
     master = sa.orm.relationship("Master", back_populates="appointments")
     user = sa.orm.relationship("User", back_populates="appointments")
-    # !service = sa.orm.relationship("Service", back_populates="appointments")
+    service = sa.orm.relationship("Service", back_populates="appointments")
     start_time = sa.orm.mapped_column(sa.TIMESTAMP, nullable=False)
     end_time = sa.orm.mapped_column(sa.TIMESTAMP, nullable=False)
     status = sa.orm.mapped_column(sa.Enum("confirmed", "cancelled", "pending", name="status"),
@@ -82,8 +95,9 @@ class Notification(Base):
     __tablename__ = "notifications"
     notification_id = sa.orm.mapped_column(sa.INTEGER, primary_key=True)
     appointment_id = sa.orm.mapped_column(sa.INTEGER, sa.ForeignKey("appointments.appointment_id"))
+    chat_id = sa.orm.mapped_column(sa.INTEGER, nullable=False)
     appointment = sa.orm.relationship("Appointment")
-    notification_type = sa.orm.mapped_column(sa.Enum("reminder_24h", "reminder_1h", "confirmation", name="notification_type"),)
+    notification_type = sa.orm.mapped_column(sa.Enum("reminder", "confirmation", name="notification_type"),)
     send_at = sa.orm.mapped_column(sa.TIMESTAMP, nullable=False)
     status = sa.orm.mapped_column(sa.Enum("sent", "pending", name="status"), default="pending")
 
@@ -96,5 +110,3 @@ class Statistic(Base):
     revenue = sa.orm.mapped_column(sa.DECIMAL, nullable=False)
     most_popular_service = sa.orm.mapped_column(sa.String, nullable=False)
     busiest_master = sa.orm.mapped_column(sa.String, nullable=False)
-
-Base.metadata.create_all(engine)

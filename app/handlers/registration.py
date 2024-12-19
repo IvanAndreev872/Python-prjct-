@@ -26,7 +26,7 @@ async def cancel_handler(message: Message, state: FSMContext):
     if cur_state is None:
         return
     await state.clear()
-    await message.answer(text='Регистрация прекращена.', reply_markup=welcome_keyboard.get_welcome_kb())
+    await message.answer(text='Регистрация прекращена.', reply_markup=welcome_keyboard.get_welcome_kb(message.from_user.id))
 
 @router.message(F.text.lower() == 'регистрация')
 async def start_registration_handler(message: Message, state: FSMContext):
@@ -63,7 +63,7 @@ async def contact_handler(message: Message, state: FSMContext):
                               user_data['email']
                               )
         await message.answer(text=f'Регистрация прошла успешно', reply_markup=registered_users_kb.get_registered_kb())
-        await state.clear()  
+        await state.clear()
     else:
         builder = ReplyKeyboardBuilder()
         builder.add(types.KeyboardButton(text='Поделится контактом', request_contact=True))
