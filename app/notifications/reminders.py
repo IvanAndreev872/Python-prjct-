@@ -3,6 +3,8 @@ import datetime
 from aiogram import Bot
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.exceptions import BotBlocked, MessageCantBeDeleted, MessageToDeleteNotFound
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 
 from database import db_utils
 
@@ -43,3 +45,14 @@ async def send_notifications_job(bot: Bot):
         if datetime.timedelta(hours=0) >= appointment.start_time - datetime.datetime.now() > datetime.timedelta(
                 hours=-1):
             await send_confirmation(bot, appointment)
+
+
+def start_scheduler(bot: Bot):
+    scheduler = AsyncIOScheduler()
+
+    scheduler.add_job(send_notifications_job,
+                      trigger=IntervalTrigger(seconds=60),
+                      args=[bot],
+                      next_run_time=datetime.datetime.now())
+
+    scheduler.start()
