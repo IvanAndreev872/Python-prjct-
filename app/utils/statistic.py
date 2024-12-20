@@ -5,7 +5,7 @@ from database import models, db_utils
 
 def get_stat():
     # Нужна функция для вывода всех мастеров массивом или списком
-    masters = db_utils.get_masters()
+    masters = db_utils.get_all_masters()
     stats = {
         'Мастер': masters,
         'Количество записей': [],
