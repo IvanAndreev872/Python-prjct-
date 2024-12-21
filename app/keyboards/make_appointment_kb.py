@@ -29,19 +29,19 @@ async def get_right_masterts(service1: models.Service, remover=0) -> InlineKeybo
     if (len(masters) <= 10) : pass
     elif (len(masters) > 10 and remover < 10) :
         markup.add(
-            InlineKeyboardButton(f"1/{math.ceil(len(masters) / 10)}", callback_data="..."),
-            InlineKeyboardButton ("Далее 👉", callback_data=f"swipe_masters:{remover + 10}")
+            InlineKeyboardButton(text=f"1/{math.ceil(len(masters) / 10)}", callback_data="..."),
+            InlineKeyboardButton(text="Далее 👉", callback_data=f"swipe_masters:{remover + 10}")
         )
     elif (remover + 10 >= len(masters)):
         markup.add(
-            InlineKeyboardButton("👈 Назад", callback_data=f"swipe_masters:{remover - 10}"),
-            InlineKeyboardButton(f"{str(remover + 10)[:-1]}/{math.ceil(len(masters) / 10)}", callback_data="..."), 
+            InlineKeyboardButton(text="👈 Назад", callback_data=f"swipe_masters:{remover - 10}"),
+            InlineKeyboardButton(text=f"{str(remover + 10)[:-1]}/{math.ceil(len(masters) / 10)}", callback_data="..."), 
         )
     else:
         markup.add(
-            InlineKeyboardButton("👈 Назад", callback_data=f"swipe_masters:{remover - 10}"),
-            InlineKeyboardButton(f"{str(remover + 10)[:-1]}/{math.ceil(len(masters) / 10)}", callback_data="..."),
-            InlineKeyboardButton("Далее 👉", callback_data=f"swipe_masters:{remover + 10}"),
+            InlineKeyboardButton(text="👈 Назад", callback_data=f"swipe_masters:{remover - 10}"),
+            InlineKeyboardButton(text=f"{str(remover + 10)[:-1]}/{math.ceil(len(masters) / 10)}", callback_data="..."),
+            InlineKeyboardButton(text="Далее 👉", callback_data=f"swipe_masters:{remover + 10}"),
         )
     return markup.as_markup(resize_keyboard=True)
 
@@ -50,26 +50,26 @@ async def get_service(remover=0) -> InlineKeyboardMarkup :
     markup = InlineKeyboardBuilder()
     for count, service_num in enumerate(range(remover, len(services))):
         if count < 10 :
-            markup.add(InlineKeyboardButton(services[service_num].name, callback_data=f'service id: {services[service_num].service_id}'))
+            markup.add(InlineKeyboardButton(text=services[service_num].name, callback_data=f'service id: {services[service_num].service_id}'))
         else :
             break
 
     if (len(services) <= 10) : pass
     elif (len(services) > 10 and remover < 10) :
         markup.add(
-            InlineKeyboardButton(f"1/{math.ceil(len(services) / 10)}", callback_data="..."),
-            InlineKeyboardButton ("Далее 👉", callback_data=f"swipe_services:{remover + 10}")
+            InlineKeyboardButton(text=f"1/{math.ceil(len(services) / 10)}", callback_data="..."),
+            InlineKeyboardButton(text="Далее 👉", callback_data=f"swipe_services:{remover + 10}")
         )
     elif (remover + 10 >= len(services)):
         markup.add(
-            InlineKeyboardButton("👈 Назад", callback_data=f"swipe_services:{remover - 10}"),
-            InlineKeyboardButton(f"{str(remover + 10)[:-1]}/{math.ceil(len(services) / 10)}", callback_data="..."), 
+            InlineKeyboardButton(text="👈 Назад", callback_data=f"swipe_services:{remover - 10}"),
+            InlineKeyboardButton(text=f"{str(remover + 10)[:-1]}/{math.ceil(len(services) / 10)}", callback_data="..."), 
         )
     else:
         markup.add(
-            InlineKeyboardButton("👈 Назад", callback_data=f"swipe_services:{remover - 10}"),
-            InlineKeyboardButton(f"{str(remover + 10)[:-1]}/{math.ceil(len(services) / 10)}", callback_data="..."),
-            InlineKeyboardButton("Далее 👉", callback_data=f"swipe_services:{remover + 10}"),
+            InlineKeyboardButton(text="👈 Назад", callback_data=f"swipe_services:{remover - 10}"),
+            InlineKeyboardButton(text=f"{str(remover + 10)[:-1]}/{math.ceil(len(services) / 10)}", callback_data="..."),
+            InlineKeyboardButton(text="Далее 👉", callback_data=f"swipe_services:{remover + 10}"),
         )   
     return markup.as_markup(resize_keyboard=True)
 
@@ -86,19 +86,19 @@ async def get_free_windows(master: models.Master, service: models.Service, remov
     if (len(schedule) <= 10) : pass
     elif (len(schedule) > 10 and remover < 10) :
         markup.add(
-            InlineKeyboardButton(f"1/{math.ceil(len(schedule) / 10)}", callback_data="..."),
-            InlineKeyboardButton ("Далее 👉", callback_data=f"swipe_time:{remover + 10}")
+            InlineKeyboardButton(text=f"1/{math.ceil(len(schedule) / 10)}", callback_data="..."),
+            InlineKeyboardButton(text="Далее 👉", callback_data=f"swipe_time:{remover + 10}")
         )
     elif (remover + 10 >= len(schedule)):
         markup.add(
-            InlineKeyboardButton("👈 Назад", callback_data=f"swipe_time:{remover - 10}"),
-            InlineKeyboardButton(f"{str(remover + 10)[:-1]}/{math.ceil(len(schedule) / 10)}", callback_data="..."), 
+            InlineKeyboardButton(text="👈 Назад", callback_data=f"swipe_time:{remover - 10}"),
+            InlineKeyboardButton(text=f"{str(remover + 10)[:-1]}/{math.ceil(len(schedule) / 10)}", callback_data="..."), 
         )
     else:
         markup.add(
-            InlineKeyboardButton("👈 Назад", callback_data=f"swipe_time:{remover - 10}"),
-            InlineKeyboardButton(f"{str(remover + 10)[:-1]}/{math.ceil(len(schedule) / 10)}", callback_data="..."),
-            InlineKeyboardButton("Далее 👉", callback_data=f"swipe_time:{remover + 10}"),
+            InlineKeyboardButton(text="👈 Назад", callback_data=f"swipe_time:{remover - 10}"),
+            InlineKeyboardButton(text=f"{str(remover + 10)[:-1]}/{math.ceil(len(schedule) / 10)}", callback_data="..."),
+            InlineKeyboardButton(text="Далее 👉", callback_data=f"swipe_time:{remover + 10}"),
         )
     return markup.as_markup(resize_keyboard=True)
 
