@@ -32,7 +32,7 @@ async def cancel_handler(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(text='Запись прекращена.', reply_markup=registered_users_kb.get_registered_kb())
 
-@router.message(Make_appointment.choose_service, F.text.lower == 'записаться на процедуру')
+@router.message(Make_appointment.choose_service, F.text.lower() == 'записаться на процедуру')
 async def start_appointment(message: Message, state: FSMContext):
     await state.update_data(user=message.from_user.id)
     kb = await make_appointment_kb.get_service()
