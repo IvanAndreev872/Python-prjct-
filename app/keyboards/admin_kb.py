@@ -7,6 +7,7 @@ def get_admin_kb(user_id) -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     builder.add(types.KeyboardButton(text='Статистика'))
     builder.add(types.KeyboardButton(text='Добавить админа'))
+    builder.add(types.KeyboardButton(text='Удалить админа'))
     builder.row(
         types.KeyboardButton(text='Добавить мастера'),
         types.KeyboardButton(text='Удалить мастера')

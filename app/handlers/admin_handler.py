@@ -18,6 +18,7 @@ class Admin(StatesGroup):
     add_master_experience = State()
     delete_master = State()
     delete_admin = State()
+    add_admin = State()
 
 
 @router.message(F.text.lower().strip() == 'консоль админа')
@@ -88,7 +89,7 @@ async def written_master_id_to_delete_handler(message: Message, state: FSMContex
     user_id = message.contact.user_id
 
     if not db_utils.is_master(user_id):
-        await message.answer(text="Этот пользователь не является администратором.")
+        await message.answer(text="Этот пользователь не является мастером.")
         await state.clear()
         return
 
@@ -96,6 +97,21 @@ async def written_master_id_to_delete_handler(message: Message, state: FSMContex
     await message.answer(text="Админ успешно удален!", reply_markup=get_admin_kb(message.from_user.id))
     await state.clear()
 
+@router.message(F.text.lower().strip() == 'добавить админа')
+async def add_admin_handler(message: Message, state: FSMContext):
+    builder = ReplyKeyboardBuilder()
+    builder.add(types.KeyboardButton(text='Поделиться контактом', request_contact=True))
+    await message.answer(text='Отправьте контакт мастера:', reply_markup=builder.as_markup(resize_keyboard=True))
+    await state.set_state(Admin.add_admin)
+
+@router.message(Admin.add_admin)
+async def received_master_contact(message: Message, state: FSMContext):
+    admin_id = message.contact.user_id
+
+    db_utils.add_new_admin(admin_id)
+
+    await message.answer(text="Админ успешно добавлен!", reply_markup=get_admin_kb(message.from_user.id))
+    await state.clear()
 
 @router.message(F.text.lower().strip() == 'удалить админа')
 async def delete_admin_handler(message: Message, state: FSMContext):

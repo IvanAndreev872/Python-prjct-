@@ -1,7 +1,10 @@
+from aiogram import Router, F
 from aiogram import types
 from bot.database.models import SessionLocal, Appointment
-from bot.notifications.reminders import send_notification
 
+router = Router()
+
+@router.message(F.text.lower().strip() == 'подтвердить')
 async def callback_confirm(callback_query: types.CallbackQuery):
     appointment_id = int(callback_query.data.split('_')[1])
     with SessionLocal() as session:
@@ -14,6 +17,7 @@ async def callback_confirm(callback_query: types.CallbackQuery):
             )
             make_notification(appointment, "confirmation", send_at=1)
 
+@router.message(F.text.lower().strip() == 'отменить')
 async def callback_cancel(callback_query: types.CallbackQuery):
     appointment_id = int(callback_query.data.split('_')[1])
     with SessionLocal() as session:
