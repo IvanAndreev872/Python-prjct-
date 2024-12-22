@@ -3,7 +3,7 @@ import aiogram
 from aiogram import Dispatcher
 from aiogram.dispatcher.event.bases import UNHANDLED
 from aiogram.fsm.context import FSMContext
-from aiogram.methods import SendMessage, SendContact, AnswerCallbackQuery
+from aiogram.methods import SendMessage, SendContact, AnswerCallbackQuery, EditMessageText
 from aiogram.methods.base import TelegramType
 from sqlalchemy import Update
 from sqlalchemy.orm import Session
@@ -79,7 +79,7 @@ async def test_state_and_cancel(dp: Dispatcher, bot: MockedBot, some_data):
     assert current_state == app.handlers.my_appointments.AppointmentsStates.choosing_appointment
 
     bot.add_result_for(
-        method=SendMessage,
+        method=EditMessageText,
         ok=True
     )
     bot.add_result_for(method=AnswerCallbackQuery, ok=True)
@@ -96,7 +96,7 @@ async def test_state_and_cancel(dp: Dispatcher, bot: MockedBot, some_data):
 
     callback2 = make_callback(user_id, 'cancel_1')
     bot.add_result_for(
-        method=SendMessage,
+        method=EditMessageText,
         ok=True
     )
     bot.add_result_for(method=AnswerCallbackQuery, ok=True)
