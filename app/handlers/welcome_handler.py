@@ -99,3 +99,8 @@ async def redirect_to_master_screen(message: Message):
 async def main_menu_handler(message: Message):
     kb = get_registered_kb()
     await message.answer(text='Меню клиента:', reply_markup=kb)
+
+@router.message(F.text == "Начальный экран")
+async def start_screen(message: Message) :
+    kb = get_welcome_kb(message.from_user.id)
+    await message.answer(text='Начальный экран', reply_markup=kb)
