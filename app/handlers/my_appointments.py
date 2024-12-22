@@ -30,7 +30,7 @@ async def choosing_appointment_handler(callback: CallbackQuery, state: FSMContex
     master_name = db_utils.get_user_by_master(master).name
     text = (f"Подробности:\nПроцедура: {service_name}\nМастер: {master_name}\nДата: {appointment.start_time}\n" +
             f"Статус:{appointment.status}")
-    await callback.message.answer(text=text, reply_markup=kb)
+    await callback.message.edit_text(text=text, reply_markup=kb)
     await state.set_state(AppointmentsStates.pressing_button)
     await callback.answer()
 
@@ -42,7 +42,7 @@ async def confirm_appointment_handler(callback: CallbackQuery, state: FSMContext
     user = db_utils.get_user_by_telegram_id(callback.from_user.id)
     appointments = db_utils.get_appointments_by_user(user)
     kb = my_appointments_kb.get_appointments_kb(appointments)
-    await callback.message.answer(text='Запись подтверждена.', reply_markup=kb)
+    await callback.message.edit_text(text='Запись подтверждена. \n\n Мои записи:')
     await state.set_state(AppointmentsStates.choosing_appointment)
     await callback.answer()
 
@@ -54,7 +54,7 @@ async def cancel_appointment_handler(callback: CallbackQuery, state: FSMContext)
     user = db_utils.get_user_by_telegram_id(callback.from_user.id)
     appointments = db_utils.get_appointments_by_user(user)
     kb = my_appointments_kb.get_appointments_kb(appointments)
-    await callback.message.answer(text='Запись отменена.', reply_markup=kb)
+    await callback.message.edit_text(text='Запись отменена. \n\n Мои записи:', reply_markup=kb)
     await state.set_state(AppointmentsStates.choosing_appointment)
     await callback.answer()
 
@@ -65,6 +65,6 @@ async def main_menu_handler(callback: CallbackQuery, state: FSMContext):
     user = db_utils.get_user_by_telegram_id(callback.from_user.id)
     appointments = db_utils.get_appointments_by_user(user)
     kb = my_appointments_kb.get_appointments_kb(appointments)
-    await callback.message.answer(text='Мои записи:', reply_markup=kb)
+    await callback.message.edit_text(text='Мои записи:', reply_markup=kb)
     await state.set_state(AppointmentsStates.choosing_appointment)
     await callback.answer()
