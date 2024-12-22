@@ -21,7 +21,7 @@ class Make_appointment(StatesGroup) :
     choose_master = State()
     choose_time = State()
 
-@router.message(F.text.lower() == 'отмена')
+@router.message(F.text.lower() == 'back to main menu')
 async def cancel_handler(message: Message, state: FSMContext):
     """
     Отменяет запись
@@ -29,8 +29,8 @@ async def cancel_handler(message: Message, state: FSMContext):
     cur_state = await state.get_state()
     if cur_state is None:
         return
+    await message.edit_text(text='Запись прекращена.')
     await state.clear()
-    await message.answer(text='Запись прекращена.', reply_markup=registered_users_kb.get_registered_kb())
 
 @router.message(F.text.lower() == 'записаться на процедуру')
 async def start_appointment(message: Message, state: FSMContext):
@@ -100,5 +100,5 @@ async def swipe_services_page(callback: CallbackQuery, state: FSMContext):
     master = db_utils.get_master_by_master_id(appointment_data['master'])
     remover = int(callback.data.split(":")[1])
     kb = await make_appointment_kb.get_free_windows(master=master, service=service, remover=remover)
-    await callback.message.edit_text('Выберете мастера предоставляющего данную услугу: ', reply_markup=kb)
+    await callback.message.edit_text('Теперь осталось выбрать удобное для вас время: ', reply_markup=kb)
     await callback.answer()
