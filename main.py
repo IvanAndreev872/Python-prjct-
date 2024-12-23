@@ -8,6 +8,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 
+import app.handlers.make_appointment
 import app.handlers.welcome_handler
 from config_reader import config
 import app.handlers.registration

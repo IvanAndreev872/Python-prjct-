@@ -21,16 +21,10 @@ class Make_appointment(StatesGroup) :
     choose_master = State()
     choose_time = State()
 
-@router.message(F.text.lower() == 'отмена')
-async def cancel_handler(message: Message, state: FSMContext):
-    """
-    Отменяет запись
-    """
-    cur_state = await state.get_state()
-    if cur_state is None:
-        return
+@router.callback_query(F.data.startswith('back to main'))
+async def cancel_handler(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text(text='Запись прекращена.')
     await state.clear()
-    await message.answer(text='Запись прекращена.', reply_markup=registered_users_kb.get_registered_kb())
 
 @router.message(F.text.lower() == 'записаться на процедуру')
 async def start_appointment(message: Message, state: FSMContext):
@@ -44,10 +38,15 @@ async def choosing_service(callback: CallbackQuery, state: FSMContext):
     service_id = int(callback.data.split(' ')[-1])
     serv = db_utils.get_service_by_id(service_id)
     await state.update_data(service=service_id)
-    kb = await make_appointment_kb.get_right_masterts(service1=serv)
-    await callback.message.edit_text('Выберете мастера предоставляющего данную услугу: ', reply_markup=kb)
-    await callback.answer()
-    await state.set_state(Make_appointment.choose_master)
+    if (len(db_utils.get_masters_by_service(serv)) == 0) :
+        await callback.message.edit_text('К сожалению, пока что, нет мастера, предоставляющего данную услугу(')
+        await callback.answer()
+        await state.clear()
+    else:
+        kb = await make_appointment_kb.get_right_masterts(service1=serv)
+        await callback.message.edit_text('Выберете мастера предоставляющего данную услугу: ', reply_markup=kb)
+        await callback.answer()
+        await state.set_state(Make_appointment.choose_master)
 
 @router.callback_query(Make_appointment.choose_master, F.data.startswith('master id: '))
 async def choosing_master(callback: CallbackQuery, state: FSMContext):
@@ -57,10 +56,15 @@ async def choosing_master(callback: CallbackQuery, state: FSMContext):
     master_id = int(callback.data.split(' ')[-1])
     mast = db_utils.get_master_by_master_id(master_id=master_id)
     await state.update_data(master=master_id)
-    kb = await make_appointment_kb.get_free_windows(master=mast, service=serv)
-    await callback.message.edit_text('Теперь осталось выбрать удобное для вас время: ', reply_markup=kb)
-    await callback.answer()
-    await state.set_state(Make_appointment.choose_time)
+    if (len(db_utils.get_schedules_by_service_and_master(master=mast, service=serv)) == 0) :
+        await callback.message.edit_text('К сожалению у этого мастера нет свободного времени(')
+        await callback.answer()
+        await state.clear()
+    else:
+        kb = await make_appointment_kb.get_free_windows(master=mast, service=serv)
+        await callback.message.edit_text('Теперь осталось выбрать удобное для вас время: ', reply_markup=kb)
+        await callback.answer()
+        await state.set_state(Make_appointment.choose_time)
 
 @router.callback_query(Make_appointment.choose_time, F.data.startswith('window: '))
 async def choosing_time(callback: CallbackQuery, state: FSMContext):
@@ -73,6 +77,32 @@ async def choosing_time(callback: CallbackQuery, state: FSMContext):
     service = db_utils.get_service_by_id(appointment_data['service'])
     schedule = db_utils.get_schedule_by_id(appointment_data['time'])
     db_utils.add_new_appointment(master=master, user=user, service=service, schedule=schedule)
-    await callback.message.answer('Запись прошла успешно!', reply_markup=registered_users_kb.get_registered_kb())
+    await callback.message.edit_text(text=f'Запись прошла успешно! \n Вы записаны на процедуру: {service.name} \n К мастеру: {db_utils.get_user_by_master(master).name} \n На: {schedule.start_time} - {schedule.end_time}')
     await state.clear()
+    await callback.answer()
+
+@router.callback_query(F.data.startswith('swipe_services:'))
+async def swipe_services_page(callback: CallbackQuery, state: FSMContext):
+    remover = int(callback.data.split(":")[1])
+    kb = await make_appointment_kb.get_service(remover=remover)
+    await callback.message.edit_text('Выберете интересующую вас процедуру: ', reply_markup=kb)
+    await callback.answer()
+
+@router.callback_query(F.data.startswith('swipe_masters:'))
+async def swipe_services_page(callback: CallbackQuery, state: FSMContext):
+    appointment_data = await state.get_data()
+    service = db_utils.get_service_by_id(appointment_data['service'])
+    remover = int(callback.data.split(":")[1])
+    kb = await make_appointment_kb.get_right_masterts(service1=service, remover=remover)
+    await callback.message.edit_text('Выберете мастера предоставляющего данную услугу: ', reply_markup=kb)
+    await callback.answer()
+
+@router.callback_query(F.data.startswith('swipe_time:'))
+async def swipe_services_page(callback: CallbackQuery, state: FSMContext):
+    appointment_data = await state.get_data()
+    service = db_utils.get_service_by_id(appointment_data['service'])
+    master = db_utils.get_master_by_master_id(appointment_data['master'])
+    remover = int(callback.data.split(":")[1])
+    kb = await make_appointment_kb.get_free_windows(master=master, service=service, remover=remover)
+    await callback.message.edit_text('Теперь осталось выбрать удобное для вас время: ', reply_markup=kb)
     await callback.answer()

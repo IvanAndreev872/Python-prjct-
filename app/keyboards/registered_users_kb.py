@@ -9,5 +9,5 @@ def get_registered_kb() -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     builder.add(types.KeyboardButton(text='Мои записи'))
     builder.add(types.KeyboardButton(text = 'Записаться на процедуру'))
-    builder.add(types.KeyboardButton(text = 'Завершить работу'))
+    builder.add(types.KeyboardButton(text = 'Начальный экран'))
     return builder.as_markup(resize_keyboard=True)
