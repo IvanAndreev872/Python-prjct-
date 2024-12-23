@@ -42,7 +42,7 @@ async def confirm_appointment_handler(callback: CallbackQuery, state: FSMContext
     user = db_utils.get_user_by_telegram_id(callback.from_user.id)
     appointments = db_utils.get_appointments_by_user(user)
     kb = my_appointments_kb.get_appointments_kb(appointments)
-    await callback.message.edit_text(text='Запись подтверждена. \n\n Мои записи:')
+    await callback.message.edit_text(text='Запись подтверждена. \n\n Мои записи:', reply_markup=kb)
     await state.set_state(AppointmentsStates.choosing_appointment)
     await callback.answer()
 
