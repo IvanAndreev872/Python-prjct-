@@ -49,13 +49,13 @@ async def received_master_contact(message: Message, state: FSMContext):
 
     await state.update_data(master_id=master_id)
 
-    await message.answer(text="Введите предоставляемые услуги мастера:")
+    await message.answer(text="Введите предоставляемые услуги мастера через запятую:")
     await state.set_state(Admin.add_master_services)
 
 
 @router.message(Admin.add_master_services)
 async def received_master_services(message: Message, state: FSMContext):
-    services = message.text.strip()
+    services = message.text.strip.split(",")
     await state.update_data(services=services)
 
     await message.answer(text="Введите опыт работы мастера (например, количество лет):")
@@ -101,7 +101,7 @@ async def written_master_id_to_delete_handler(message: Message, state: FSMContex
 async def add_admin_handler(message: Message, state: FSMContext):
     builder = ReplyKeyboardBuilder()
     builder.add(types.KeyboardButton(text='Поделиться контактом', request_contact=True))
-    await message.answer(text='Отправьте контакт мастера:', reply_markup=builder.as_markup(resize_keyboard=True))
+    await message.answer(text='Отправьте контакт админа:', reply_markup=builder.as_markup(resize_keyboard=True))
     await state.set_state(Admin.add_admin)
 
 @router.message(Admin.add_admin)

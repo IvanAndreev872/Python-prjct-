@@ -8,6 +8,7 @@ def get_welcome_kb(user_id) -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     if db_utils.check_new_user(user_id):
         builder.add(types.KeyboardButton(text='Регистрация'))
+        builder.add(types.KeyboardButton(text='Консоль админа'))
     builder.row(
         types.KeyboardButton(text='Вход'),
         types.KeyboardButton(text='Выход')
