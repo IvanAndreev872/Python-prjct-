@@ -1,5 +1,6 @@
 # Python-prjct
 [Бот](https://t.me/beauty_essential_bot)
+
 [Презентация](https://docs.google.com/presentation/d/1_PMkhJ-0-AxlrcBI3oy_hpLXp10rgIzDrl1lILCVcyQ/edit?usp=sharing) c видео работы бота и тестов.
 
 По вопросам писать  [@kokosov_kokosov](https://t.me/kokosov_kokosov)
