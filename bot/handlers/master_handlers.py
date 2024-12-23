@@ -1,92 +1,75 @@
-from aiogram import Router
-from aiogram.types import Message, CallbackQuery
-from aiogram.filters import Command
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from database.models import Appointment, Master, User
-from bot.keyboards.inline_keyboards import get_master_appointments_keyboard
+from aiogram import Router, F, types
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from database import db_utils
 
 router = Router()
 
-async def send_notification_to_client(appointment: Appointment):
+@router.message(F.text == "Экран мастера")
+async def master_dashboard(message: types.Message):
     """
-    Заглушка для отправки уведомления клиенту.
+    Главный экран мастера с выбором действий.
     """
-    pass
+    user_id = message.from_user.id
+    user = db_utils.get_user_by_telegram_id(user_id)
 
-@router.message(Command("my_appointments"))
-async def handle_my_appointments(message: Message, session: AsyncSession):
-    """
-    Обработчик команды для мастеров. Показывает записи мастера.
-    """
-    telegram_id = message.from_user.id
-
-    """
-    Проверяем, является ли пользователь мастером
-    """
-    result = await session.execute(select(User).where(User.telegram_id == telegram_id))
-    user = await result.scalar_one_or_none()
     if not user or user.role != "master":
-        await message.answer("Команда доступна только для мастеров.")
+        await message.answer("У вас нет доступа к экрану мастера.")
         return
 
+    # Клавиатура для действий мастера
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Отправить график работы", callback_data="send_schedule")],
+        [InlineKeyboardButton(text="Мои записи", callback_data="view_appointments")],
+        [InlineKeyboardButton(text="Отправить статистику", callback_data="send_statistics")],
+    ])
+    await message.answer("Добро пожаловать в экран мастера. Выберите действие:", reply_markup=keyboard)
+
+@router.callback_query(lambda query: query.data == "view_appointments")
+async def view_appointments(callback: types.CallbackQuery):
     """
-    Получаем информацию о мастере
+    Обработчик просмотра записей мастера.
     """
-    result = await session.execute(select(Master).where(Master.user_id == user.user_id))
-    master = await result.scalar_one_or_none()
-    if not master:
-        await message.answer("Вы не зарегистрированы как мастер.")
+    user_id = callback.from_user.id
+    appointments = db_utils.get_appointments(user_id)
+
+    if not appointments:
+        await callback.message.answer("У вас пока нет записей.")
+        await callback.answer()
         return
 
-    """
-    Получаем записи мастера
-    scalars() возвращает AsyncScalarResult, у которого all() - асинхронный метод
-    """
-    appointments_result = await session.execute(
-        select(Appointment).where(Appointment.master_id == master.master_id)
-    )
-    appointments = await appointments_result.scalars().all()
-
-    if appointments:
-        for appointment in appointments:
-            await message.answer(
-                f"Запись: {appointment.start_time.strftime('%d.%m.%Y %H:%M')} - "
-                f"{appointment.end_time.strftime('%H:%M')}\n"
-                f"Клиент: {appointment.user.name if appointment.user else 'Неизвестно'}\n"
-                f"Услуга: {appointment.service_id}\n"
-                f"Статус: {appointment.status}",
-                reply_markup=get_master_appointments_keyboard(appointment.appointment_id)
-            )
-    else:
-        await message.answer("У вас нет предстоящих записей.")
-
-@router.callback_query(lambda call: call.data.startswith("notify_"))
-async def notify_client(call: CallbackQuery, session: AsyncSession):
-    """
-    Уведомить клиента о записи.
-    """
-    appointment_id = int(call.data.split("_")[1])
-    result = await session.execute(
-        select(Appointment).where(Appointment.appointment_id == appointment_id)
-    )
-    appointment = await result.scalar_one_or_none()
-
-    if appointment:
-        await send_notification_to_client(appointment)
-        await call.message.answer(
-            f"Клиент {appointment.user.name if appointment.user else 'Неизвестно'} "
-            f"уведомлён о записи на {appointment.start_time.strftime('%d.%m.%Y %H:%M')}."
+    for appt in appointments:
+        text = (
+            f"Дата: {appt['date']}\n"
+            f"Время: {appt['time']}\n"
+            f"Клиент: {appt['client_name']}\n"
+            f"Услуга: {appt['service']}"
         )
-    else:
-        await call.message.answer("Запись не найдена.")
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Уведомить клиента", callback_data=f"notify_{appt['id']}")],
+        ])
+        await callback.message.answer(text, reply_markup=keyboard)
 
-@router.callback_query(lambda call: call.data.startswith("edit_"))
-async def edit_appointment(call: CallbackQuery):
+    await callback.answer()
+
+@router.callback_query(lambda query: query.data.startswith("notify_"))
+async def notify_client(callback: types.CallbackQuery):
     """
-    Логика изменения записи.
+    Уведомление клиента о записи.
     """
-    appointment_id = int(call.data.split("_")[1])
-    await call.message.answer(
-        f"Функция изменения записи с ID {appointment_id} пока в разработке."
+    appointment_id = callback.data.split("_")[1]
+    appointment = db_utils.get_appointment_by_id(appointment_id)
+
+    if not appointment:
+        await callback.message.answer("Ошибка: запись не найдена.")
+        await callback.answer()
+        return
+
+    # Отправка уведомления клиенту
+    message = (
+        f"Напоминание: У вас запись на услугу '{appointment['service']}' "
+        f"{appointment['date']} в {appointment['time']}.\n"
+        f"Мастер: {appointment['master_name']}."
     )
+    await callback.message.bot.send_message(chat_id=appointment['client_id'], text=message)
+    await callback.message.answer("Клиент уведомлен.")
+    await callback.answer()

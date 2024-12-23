@@ -65,7 +65,9 @@ class Service(Base):
     price = sa.orm.mapped_column(sa.Integer, nullable=False)
     duration_minutes = sa.orm.mapped_column(sa.Integer, nullable=False)
     masters = sa.orm.relationship("Master", secondary=master_services, back_populates="specializations")
+    appointments = sa.orm.relationship("Appointment", back_populates="service")  # Добавлено свойство
     __table_args__ = (CheckConstraint(duration_minutes >= 0), CheckConstraint(price >= 0))
+
 
 #фактически таблица рабочих промежутков
 class Schedule(Base):
@@ -81,14 +83,16 @@ class Appointment(Base):
     appointment_id = sa.orm.mapped_column(sa.INTEGER, primary_key=True)
     user_id = sa.orm.mapped_column(sa.INTEGER, sa.ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False)
     master_id = sa.orm.mapped_column(sa.INTEGER, sa.ForeignKey("masters.master_id", ondelete="CASCADE"), nullable=False)
-    service_id = sa.orm.mapped_column(sa.INTEGER, sa.ForeignKey("services.service_id"))
+    service_id = sa.orm.mapped_column(sa.INTEGER, sa.ForeignKey("services.service_id"))  # Связь с Service
     master = sa.orm.relationship("Master", back_populates="appointments")
     user = sa.orm.relationship("User", back_populates="appointments")
-    # !service = sa.orm.relationship("Service", back_populates="appointments")
+    service = sa.orm.relationship("Service", back_populates="appointments")  # Связь с Service
     start_time = sa.orm.mapped_column(sa.TIMESTAMP, nullable=False)
     end_time = sa.orm.mapped_column(sa.TIMESTAMP, nullable=False)
     status = sa.orm.mapped_column(sa.Enum("confirmed", "cancelled", "pending", name="status"),
                                   default="pending", nullable=False)
+
+
 
 class Notification(Base):
     __tablename__ = "notifications"

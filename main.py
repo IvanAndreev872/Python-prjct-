@@ -9,11 +9,10 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 from bot.handlers import welcome_handler, registration, master_handlers
-
 from config_reader import config
+from bot.handlers.scheduler import start_scheduler, schedule_reminders
 
 dp = Dispatcher()
-
 
 """
 самое начало нашего бота. создали его, и написали с какими серверами связываться
@@ -28,6 +27,9 @@ async def main() -> None:
         token=config.bot_token.get_secret_value(),
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
+
+    start_scheduler()
+    schedule_reminders()
 
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)

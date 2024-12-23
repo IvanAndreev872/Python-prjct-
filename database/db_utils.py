@@ -2,8 +2,9 @@ import re
 
 from database import models
 import datetime
-from database.models import SessionLocal, User
+from database.models import SessionLocal, User, Schedule, Appointment
 import sqlalchemy as sa
+from bot.handlers.scheduler import schedule_reminders
 
 def check_new_user(telegram_id: int) -> bool:
     """
@@ -30,6 +31,66 @@ def add_new_user(telegram_id: int, name: str, phone: str, email: str, role='clie
         session.add(user)
         session.commit()
         return user
+
+
+
+def get_master_schedule(master_id: int):
+    """
+    Получение расписания мастера из базы данных.
+    """
+    with SessionLocal() as session:
+        schedules = session.query(Schedule).filter(Schedule.master_id == master_id).all()
+        if not schedules:
+            return {}
+        return {schedule.day: schedule.hours for schedule in schedules}
+
+
+def get_appointments(master_id: int):
+    """
+    Получение записей мастера из базы данных.
+    """
+    with SessionLocal() as session:
+        appointments = session.query(Appointment).filter(Appointment.master_id == master_id).all()
+        return [
+            {
+                "id": appt.id,
+                "date": appt.date,
+                "time": appt.time,
+                "client_name": appt.client_name,
+                "service": appt.service_name
+            }
+            for appt in appointments
+        ]
+
+def get_appointment_by_id(appointment_id):
+    """
+    Возвращает запись по ID.
+    """
+    with SessionLocal() as session:
+        appointment = session.query(Appointment).filter(Appointment.id == appointment_id).first()
+        if not appointment:
+            return None
+        return {
+            "id": appointment.id,
+            "client_id": appointment.user_id,
+            "date": appointment.start_time.strftime("%Y-%m-%d"),
+            "time": appointment.start_time.strftime("%H:%M"),
+            "service": appointment.service_name,
+            "master_name": appointment.master.master_name,
+        }
+
+
+def update_appointment_status(appointment_id: int, status: str) -> bool:
+    """
+    Обновление статуса записи в базе данных.
+    """
+    with SessionLocal() as session:
+        appointment = session.query(Appointment).filter(Appointment.id == appointment_id).first()
+        if not appointment:
+            return False
+        appointment.status = status
+        session.commit()
+        return True
 
 def get_user_by_telegram_id(user_id: int):
     with SessionLocal() as session:
@@ -98,6 +159,13 @@ def add_master_code(code: str, description: str, user_id: int = None):
         session.commit()
         print(f"Код '{code}' успешно добавлен.")
 
+def get_master_code(code: str):
+    """
+    Возвращает мастер-код из базы данных.
+    """
+    with models.SessionLocal() as session:
+        master_code = session.query(models.MasterCode).filter_by(code=code).first()
+        return master_code
 
 
 def assign_master_code_to_user(user_id: int, code: str):
@@ -231,6 +299,7 @@ def add_new_appointment(master: models.Master, user: models.User, service: model
         session.add(app)
         session.commit()
 
+    schedule_reminders()
 def cancel_appointment(appointment: models.Appointment):
     with models.SessionLocal() as session:
         appointment.status = 'cancelled'
